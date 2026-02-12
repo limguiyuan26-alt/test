@@ -418,23 +418,7 @@ cmake -G "Ninja" .. \
 ninja
 sudo ninja install
 ##
-cd ~/rocm-systems/projects/rocMLIR
-rm -rf build && mkdir build && cd build
 
-# We specify the GPU architecture gfx1151 to ensure Absolute Sovereignty.
-cmake -G "Ninja" .. \
-    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
-    -DCMAKE_PREFIX_PATH="/opt/rocm;/opt/rocm/llvm" \
-    -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
-    -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
-    -DROCM_PATH=/opt/rocm \
-    -DAMDGPU_TARGETS="gfx1151" \
-    -DCMAKE_BUILD_TYPE=Release
-
-ninja
-sudo ninja install
-
-/opt/rocm/bin/rocmlir-driver --version
 
 ##
 
