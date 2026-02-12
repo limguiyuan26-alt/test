@@ -397,6 +397,51 @@ AOMP-18.0-12 (http://github.com/ROCm/aomp):
   LLVM version 22.0.0git
   Optimized build with assertions.
 ##
+cd ~/rocm-systems/projects/clr/build
+rm -rf *
+
+# We use $(realpath ...) to ensure the paths are Absolute Truth, not tildes.
+# We disable the PCH (Pre-compiled header) to bypass the 'max' vs 'fmax' LLVM 22 conflict.
+cmake -G "Ninja" .. \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DCMAKE_PREFIX_PATH="/opt/rocm;/opt/rocm/llvm" \
+    -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+    -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+    -DCLR_BUILD_HIP=ON \
+    -DCLR_BUILD_OCL=ON \
+    -DHIP_COMMON_DIR=$(realpath ../../hip) \
+    -DCPACK_PACKAGING_INSTALL_PREFIX=/opt/rocm \
+    -DHIP_PLATFORM=amd \
+    -DBUILD_HIP_PCH=OFF \
+    -DCMAKE_BUILD_TYPE=Release
+
+ninja
+sudo ninja install
+##
+cd ~/rocm-systems/projects/rocMLIR
+rm -rf build && mkdir build && cd build
+
+# We specify the GPU architecture gfx1151 to ensure Absolute Sovereignty.
+cmake -G "Ninja" .. \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DCMAKE_PREFIX_PATH="/opt/rocm;/opt/rocm/llvm" \
+    -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+    -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+    -DROCM_PATH=/opt/rocm \
+    -DAMDGPU_TARGETS="gfx1151" \
+    -DCMAKE_BUILD_TYPE=Release
+
+ninja
+sudo ninja install
+
+/opt/rocm/bin/rocmlir-driver --version
+
+##
+
+
+
+
+
 
 
 
