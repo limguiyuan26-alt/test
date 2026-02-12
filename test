@@ -64,6 +64,78 @@ cmake -G "Ninja" .. \
 
 ninja && sudo ninja install
 ##
+cd ~/llvm-project/amd/comgr
+rm -rf build && mkdir build && cd build
+
+cmake -G "Ninja" .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DLLVM_DIR=/opt/rocm/llvm/lib/cmake/llvm \
+    -DCMAKE_PREFIX_PATH=/opt/rocm \
+    -DAMD_COMGR_GFX_ARCHS="gfx1151"
+
+ninja && sudo ninja install
+##
+cd ~/llvm-project/amd/hipcc
+rm -rf build && mkdir build && cd build
+
+cmake -G "Ninja" .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DCMAKE_PREFIX_PATH=/opt/rocm
+
+ninja && sudo ninja install
+##
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-systems/projects/ROCT-Thunk-Interface$ cd ~/rocm-systems/projects/ROCT-Thunk-Interface
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-systems/projects/ROCT-Thunk-Interface$ git checkout master
+Already on 'master'
+Your branch is up to date with 'origin/master'.
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-systems/projects/ROCT-Thunk-Interface$ git pull origin master
+From https://github.com/ROCm/ROCT-Thunk-Interface
+ * branch            master     -> FETCH_HEAD
+Already up to date.
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-systems/projects/ROCT-Thunk-Interface$ grep -r "1151" .
+./tests/kfdtest/scripts/kfdtest.exclude:FILTER[gfx1151]=\
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-systems/projects/ROCT-Thunk-Interface$ 
+cd ~/rocm-systems/projects/ROCT-Thunk-Interface
+rm -rf build && mkdir build && cd build
+
+cmake -G "Ninja" .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DBUILD_SHARED_LIBS=ON
+
+ninja
+sudo ninja install
+##
+cd ~/rocm-systems/projects/rocr-runtime
+# Delete old failed state
+rm -rf build && mkdir build && cd build
+
+# Link to the ROCT (Thunk) we just installed in /opt/rocm
+cmake -G "Ninja" .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DCMAKE_PREFIX_PATH=/opt/rocm \
+    -DIMAGE_SUPPORT=ON
+
+ninja
+sudo ninja install
+##
+cd ~/rocm-systems/projects/rocminfo
+rm -rf build && mkdir build && cd build
+cmake -G "Ninja" .. -DCMAKE_INSTALL_PREFIX=/opt/rocm -DCMAKE_PREFIX_PATH=/opt/rocm
+ninja && sudo ninja install
+
+# IMMEDIATE AUDIT:
+/opt/rocm/bin/rocminfo | grep "gfx1151"
+##
+
+
+
+
+
+
 
 
 
