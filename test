@@ -11,16 +11,16 @@ cd ~/llvm-project
 rm -rf build
 mkdir build && cd build
 #
-
 cd ~/llvm-project/build
 rm -rf *
 
 export CC=/usr/bin/gcc-14
 export CXX=/usr/bin/g++-14
 
+# Standard ROCm Ecosystem expects the compiler at /opt/rocm/llvm
 cmake -G "Ninja" ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm-final \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang" \
     -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
@@ -43,8 +43,10 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_INCLUDE_TESTS=OFF \
     -DLLVM_INCLUDE_EXAMPLES=OFF \
     -DLLVM_INCLUDE_BENCHMARKS=OFF \
-    -DLLVM_INCLUDE_DOCS=OFF
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+    -DLLVM_INSTALL_UTILS=ON
 
-# Begin the execution vector
-ninja -j$(nproc)
+# Execute with immediate panic on failure
+ninja -j$(nproc) && sudo ninja install
 
