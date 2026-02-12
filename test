@@ -1,1 +1,50 @@
+git checkout -f tags/rocm-7.2.0 -B rocm-7.2.0-stable
+git clean -ffdx
+git submodule update --init --recursive
+grep -r "FeatureAtomicFaddInsts" llvm/lib/Target/AMDGPU/
+
+grep -r "gfx1151" llvm/lib/Target/AMDGPU/
+grep -r "gfx1151" mlir/lib/Dialect/GPU/
+
+#
+cd ~/llvm-project
+rm -rf build
+mkdir build && cd build
+#
+
+cd ~/llvm-project/build
+rm -rf *
+
+export CC=/usr/bin/gcc-14
+export CXX=/usr/bin/g++-14
+
+cmake -G "Ninja" ../llvm \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm-final \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
+    -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
+    -DAMDGPU_TARGETS="gfx1151" \
+    -DCLANG_ENABLE_HIP=ON \
+    -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
+    -DLIBOMPTARGET_AMDGCN_GFXLIST="gfx1151" \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
+    -DMLIR_ENABLE_ROCM_RUNNER=OFF \
+    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
+    -DCMAKE_C_FLAGS="-O3 -march=native" \
+    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=OFF \
+    -DLLVM_ENABLE_LTO=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF
+
+# Begin the execution vector
+ninja -j$(nproc)
 
