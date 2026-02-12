@@ -50,3 +50,24 @@ cmake -G "Ninja" ../llvm \
 # Execute with immediate panic on failure
 ninja -j$(nproc) && sudo ninja install
 
+##
+cd ~/llvm-project/amd/device-libs
+rm -rf build && mkdir build && cd build
+
+# Use your newly installed LLVM as the Executioner
+cmake -G "Ninja" .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DLLVM_DIR=/opt/rocm/llvm/lib/cmake/llvm \
+    -DAMDGCN_TARGETS="gfx1151" \
+    -DBUILD_HC_LIB=ON
+
+ninja && sudo ninja install
+##
+
+
+
+
+
+
+
