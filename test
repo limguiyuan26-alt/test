@@ -600,8 +600,7 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_DYLIB_EXPORT_ALL=ON \
     -DLLVM_BUILD_REMARKS=ON \
     -DLLVM_ENABLE_ZLIB=ON \
-    -DLLVM_ENABLE_ZSTD=ON \
-    -DLLVM_DISTRIBUTION_COMPONENTS="llvm-libraries;clang;lld;LTO;Remarks;mlir-libraries;mlir-cmake-exports"
+    -DLLVM_ENABLE_ZSTD=ON 
 
 ninja -j$(nproc) && sudo ninja install
 
@@ -648,7 +647,7 @@ unset F90
 cmake -G "Ninja" ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
-    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang;lldb;polly;bolt" \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;lldb;polly;bolt;flang" \
     -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
     -DAMDGPU_TARGETS="gfx1151" \
@@ -741,8 +740,6 @@ cmake -G "Ninja" ../llvm \
     -DCMAKE_POLICY_DEFAULT_CMP0146=OLD 
     
 ninja -j$(nproc) 
-sudo rm -rf /opt/rocm/llvm
-sudo mkdir -p /opt/rocm/llvm
 sudo ninja install
 
 ##
