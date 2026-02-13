@@ -647,7 +647,7 @@ cmake -G "Ninja" ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang;lldb;polly;bolt" \
-    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp;libc" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp;flang-rt" \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
     -DAMDGPU_TARGETS="gfx1151" \
     -DCLANG_OFFLOAD_DEFAULT_DEVICE=amdgcn-amd-amdhsa \
@@ -704,6 +704,7 @@ cmake -G "Ninja" ../llvm \
     -DCMAKE_POLICY_DEFAULT_CMP0146=OLD \
     -DLLVM_BUILD_MAIN_SRC_DIR_FOR_COMPONENTS=ON \
     -DLLVM_EXPORT_ALL_SYMBOLS=ON \
+    -DFlang_BUILD_NEW_RUNTIME=OFF \
     -DLLVM_DISTRIBUTION_COMPONENTS="LLVM;MLIR;clang;lld;LTO;Remarks;llvm-libraries;mlir-libraries;mlir-cmake-exports;clang-resource-headers;openmp;builtins;compiler-rt;llvm-config;FileCheck;not;count;mlir-opt;mlir-lsp-server;runtimes"
      
 ninja -j$(nproc) 
@@ -713,8 +714,146 @@ sudo ninja install
 
 ##
 
+# --- 1. ROCm & LLVM Path Sovereignty ---
+# The Absolute Truth: /opt/rocm is the Root, /opt/rocm/llvm is the Executioner
+export ROCM_PATH=/opt/rocm
+export LLVM_PATH=/opt/rocm/llvm
+# --- 1.1 Path Sovereignty Gatekeepers ---
+# Verify ROCm Root (The Foundation)
+[ ! -d "$ROCM_PATH" ] && { 
+    echo -e "\e[1;31m!!! [FATAL] ROCM_PATH MISSING: $ROCM_PATH\e[0m"; 
+    echo "Truth: The hardware substrate is not installed."; 
+    exit 1; 
+}
+# Verify LLVM Path (The Executioner)
+# Note: If this is your first build, manually run 'sudo mkdir -p /opt/rocm/llvm' first.
+[ ! -d "$LLVM_PATH" ] && { 
+    echo -e "\e[1;31m!!! [FATAL] LLVM_PATH MISSING: $LLVM_PATH\e[0m"; 
+    echo "Truth: The compiler output territory has not been established."; 
+    exit 1; 
+}
+echo ">>> [SYSTEM] Sovereignty Verified: Roots and Executioners are present."
+# Hierarchy: Prioritize your custom standard-build tools
+export PATH=$LLVM_PATH/bin:$ROCM_PATH/bin:$PATH
+# --- PATH Sovereignty Verification ---
+# Rule 1: No Vacuums. If the variables are empty, the system must perish.
+if [ -z "$LLVM_PATH" ] || [ -z "$ROCM_PATH" ]; then
+    echo -e "\e[1;31m!!! [FATAL] Environment Vacuum Detected.\e[0m"
+    echo "Reason: LLVM_PATH or ROCM_PATH is undefined."
+    exit 1
+fi
+# Rule 2: No Ghost Paths. If the physical binaries are missing, the executioner cannot strike.
+if [ ! -d "$LLVM_PATH/bin" ]; then
+    echo -e "\e[1;31m!!! [FATAL] LLVM Binaries Missing: $LLVM_PATH/bin\e[0m"
+    exit 1
+fi
+if [ ! -d "$ROCM_PATH/bin" ]; then
+    echo -e "\e[1;31m!!! [FATAL] ROCm Binaries Missing: $ROCM_PATH/bin\e[0m"
+    exit 1
+fi
+# Hierarchy: Prioritize your custom standard-build tools
+export PATH=$LLVM_PATH/bin:$ROCM_PATH/bin:$PATH
+echo ">>> [PATH] Hierarchy Established. Executioners at the front."
 
+# REMOVE the GCC-14 path. Clang knows how to find its own runtimes.
+export LD_LIBRARY_PATH=$LLVM_PATH/lib:$ROCM_PATH/lib:$LD_LIBRARY_PATH
+# --- LD_LIBRARY_PATH Sovereignty Check ---
+# 1. Check for LLVM Library Reality
+if [ ! -d "$LLVM_PATH/lib" ]; then
+    echo -e "\e[1;31m!!! [FATAL] LLVM Library Path Missing: $LLVM_PATH/lib\e[0m"
+    echo "Reason: Shared objects (.so) are not present. Sequential Causality broken."
+    exit 1
+fi
+# 2. Check for ROCm Library Reality
+if [ ! -d "$ROCM_PATH/lib" ]; then
+    echo -e "\e[1;31m!!! [FATAL] ROCm Library Path Missing: $ROCM_PATH/lib\e[0m"
+    echo "Reason: Hardware acceleration libraries not found."
+    exit 1
+fi
+# 3. Hierarchy: Enforce Custom Paths as the One-Way Vector of Truth
+export LD_LIBRARY_PATH=$LLVM_PATH/lib:$ROCM_PATH/lib:$LD_LIBRARY_PATH
+echo ">>> [LINKER] Library Sovereignty Established. Ghost paths eliminated."
 
+# --- 2. AMD 8060S (gfx1151) Hardware Identity ---
+# Direct mapping to the silicon truth
+export HSA_OVERRIDE_GFX_VERSION=11.5.1
+export HCC_AMDGPU_TARGET=gfx1151
+export PYTORCH_ROCM_ARCH=gfx1151
+export HIP_PLATFORM=amd
+export HIP_RUNTIME=amd
+export HIP_COMPILER=clang
+
+# This is where ROCm-Device-Libs MUST be installed for Clang to see them
+export DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib
+OCML_CHECK=$(find "$DEVICE_LIB_PATH" -name "ocml.bc" 2>/dev/null)
+if [ -z "$OCML_CHECK" ]; then
+    echo -e "\e[1;31m[ERROR 01: BITCODE MISSING]\e[0m"
+    echo "Location: $DEVICE_LIB_PATH"
+    echo "Reason: The silicon instructions (ocml.bc) are not present at the defined path."
+    echo "Fix: Check if 'rocm-device-libs' is installed or if the path is wrong."
+    exit 1 
+fi
+# --- 1.6 Hardware Substrate Verification ---
+AMDGPU_ARCH_BIN="$LLVM_PATH/bin/amdgpu-arch"
+if [ -f "$AMDGPU_ARCH_BIN" ]; then
+    DETECTED_ARCH=$($AMDGPU_ARCH_BIN | head -n 1)
+    
+    if [[ "$DETECTED_ARCH" != *"gfx1151"* ]]; then
+        echo -e "\e[1;31m[ERROR 02: HARDWARE MISMATCH]\e[0m"
+        echo "Detected:  $DETECTED_ARCH"
+        echo "Expected:  gfx1151 (Radeon 8060S)"
+        echo "Reason:    The compiler target does not match the physical silicon."
+        exit 1
+    fi
+else
+    echo -e "\e[1;33m[WARNING: TOOL MISSING]\e[0m"
+    echo "Tool: $AMDGPU_ARCH_BIN not found. Proceeding with caution..."
+fi
+# --- 1.7 Toolchain Executioner Verification ---
+# Define the tools we require for Absolute Sovereignty
+REQUIRED_TOOLS=("clang" "clang++" "ld.lld" "llvm-ar" "llvm-nm" "llvm-ranlib" "llvm-objcopy" "llvm-strip")
+for tool in "${REQUIRED_TOOLS[@]}"; do
+    if [ ! -f "$LLVM_PATH/bin/$tool" ]; then
+        echo -e "\e[1;31m!!! [FATAL] Tool Missing: $LLVM_PATH/bin/$tool\e[0m"
+        echo "Reason: Sequential Causality broken. The toolchain is incomplete."
+        exit 1
+    fi
+done
+# --- 2. Exporting the Vector of Truth ---
+# Compilers
+export CC=$LLVM_PATH/bin/clang
+export CXX=$LLVM_PATH/bin/clang++
+export CPP=$LLVM_PATH/bin/clang-cpp
+# Linker (Enforce LLD to prevent GNU ld friction)
+export LD=$LLVM_PATH/bin/ld.lld
+# Binary Utilities
+export AR=$LLVM_PATH/bin/llvm-ar
+export NM=$LLVM_PATH/bin/llvm-nm
+export RANLIB=$LLVM_PATH/bin/llvm-ranlib
+export OBJCOPY=$LLVM_PATH/bin/llvm-objcopy
+export STRIP=$LLVM_PATH/bin/llvm-strip
+export READELF=$LLVM_PATH/bin/llvm-readelf
+echo ">>> [TOOLCHAIN] All Executioners Armed. System is now Sovereign."
+
+# --- 3. Auto-Activation of the Python Nation ---
+if [ -d "$HOME/rocm_env" ]; then
+    source "$HOME/rocm_env/bin/activate"
+    # 1. Verify 8060S Hardware Substrate
+    if [ -e /dev/kfd ] && [ -e /dev/dri/renderD128 ]; then
+        GPU_STATUS="READY"
+    else
+        GPU_STATUS="DISCONNECTED"
+    fi
+    # 2. Locate the HIPIFY Translator
+    HIPIFY_BIN=$(which hipify-perl 2>/dev/null)
+    # 3. Output the Truth for the AI Observer
+    echo ">>> [8060S] Sovereign Environment Active. Status: $GPU_STATUS"
+    if [ ! -z "$HIPIFY_BIN" ]; then
+        echo ">>> [HIPIFY] Translator Armed: $HIPIFY_BIN"
+    else
+        echo ">>> [HIPIFY] Translator Missing from PATH."
+    fi
+fi
 
 
 
