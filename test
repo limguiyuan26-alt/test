@@ -146,7 +146,6 @@ cmake -G "Ninja" .. \
     -DCMAKE_PREFIX_PATH="/opt/rocm;/opt/rocm/lib;/opt/rocm/lib64" \
     -DCLR_BUILD_HIP=ON \
     -DCLR_BUILD_OCL=ON \
-    -DHIP_COMMON_DIR=/home/redyy/rocm-systems/projects/hip \
     -DAMDGPU_TARGETS="gfx1151" \
     -DCMAKE_BUILD_TYPE=Release \
     -DHIP_ENABLE_PCH=OFF
@@ -610,11 +609,109 @@ You only need to re-build LLVM if:
     Version Mismatch: You need a newer version of LLVM (e.g., moving from 22.0 to 23.0).
     Missing Project: You suddenly need a project you didn't include (e.g., you decided you needed Polly).
     Broken Exports: You find a "Ghost Symbol" (like you just did) because a flag was missing.
+
+ldd -r /opt/rocm/bin/rocmlir-driver 2>&1 | grep "undefined symbol"
+NucBox-EVO-X2:~$ ldd -r /opt/rocm/bin/rocmlir-driver 2>&1 | grep "undefined symbol"
+undefined symbol: _ZN4mlir29registerGPUDialectTranslationERNS_15DialectRegistryE        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN4mlir30registerLLVMDialectTranslationERNS_15DialectRegistryE       (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN3lld3elf4linkEN4llvm8ArrayRefIPKcEERNS1_11raw_ostreamES7_bb        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN3lld19CommonLinkerContext7destroyEv        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN4mlir19createTosaToSCFPassEv       (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir4math32createMathExtendToSupportedTypesENS0_33MathExtendToSupportedTypesOptionsE        (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir33createArithToAMDGPUConversionPassENS_34ArithToAMDGPUConversionPassOptionsE    (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir22createTosaToTensorPassEv    (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir6amdgpu30createAmdgpuEmulateAtomicsPassENS0_31AmdgpuEmulateAtomicsPassOptionsE  (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir21createTosaToArithPassEv     (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir4math21createMathUpliftToFMAEv        (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir13bufferization33registerTransformDialectExtensionERNS_15DialectRegistryE       (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu32createAmdgpuMaskedloadToLoadPassEv   (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir5index35registerConvertIndexToLLVMInterfaceERNS_15DialectRegistryE    (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu38createAmdgpuResolveStridedMetadataPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir21createTosaToArithPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir19createTosaToSCFPassEv       (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6tensor42registerInferTypeOpInterfaceExternalModelsERNS_15DialectRegistryE      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir2ub32registerConvertUBToLLVMInterfaceERNS_15DialectRegistryE  (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir37registerConvertComplexToLLVMInterfaceERNS_15DialectRegistryE        (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math23createMathExpandOpsPassEv      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu30createAmdgpuEmulateAtomicsPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math26createMathSincosFusionPassEv   (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu29createAmdgpuFoldMemRefOpsPassEv      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math32createMathExtendToSupportedTypesEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir33createArithToAMDGPUConversionPassEv (/opt/rocm/bin/rocmlir-driver)
+FAILED.
 ##
+cd ~/llvm-project/build
+rm -rf *
 
+cmake -G "Ninja" ../llvm \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang;lldb;polly;bolt" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp;libc" \
+    -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
+    -DAMDGPU_TARGETS="gfx1151" \
+    -DCLANG_OFFLOAD_DEFAULT_DEVICE=amdgcn-amd-amdhsa \
+    -DLIBOMPTARGET_DEVICE_ARCHS="gfx1151" \
+    -DLIBOMPTARGET_AMDGCN_GFXLIST="gfx1151" \
+    -DROCM_PATH=/opt/rocm \
+    -DHIP_PATH=/opt/rocm \
+    -DDEFAULT_SYSROOT=/opt/rocm \
+    -DCLANG_DEFAULT_ROCM_DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib \
+    -DAMD_DEVICE_LIBS_PREFIX=/opt/rocm \
+    -DHIP_PLATFORM=amd \
+    -DCLANG_ENABLE_HIP=ON \
+    -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
+    -DMLIR_ROCM_RUNNER_ENABLED=ON \
+    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
+    -DMLIR_ENABLE_EXPORT_DYNAMIC_SYMBOLS=ON \
+    -DMLIR_LINK_MLIR_DYLIB=ON \
+    -DMLIR_BUILD_MLIR_DYLIB=ON \
+    -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
+    -DMLIR_ENABLE_AGGREGATE_OBJECTS=ON \
+    -DMLIR_EXPORT_ALL=ON \
+    -DMLIR_INCLUDE_CONVERSIONS=ON \
+    -DMLIR_INCLUDE_TRANSLATIONS=ON \
+    -DCMAKE_C_FLAGS="-O3 -march=native" \
+    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=OFF \
+    -DLLVM_ENABLE_LTO=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DLLVM_DYLIB_EXPORT_ALL=ON \
+    -DLLVM_BUILD_REMARKS=ON \
+    -DLLVM_ENABLE_Z3_SOLVER=OFF \
+    -DLLVM_ENABLE_ZLIB=ON \
+    -DLLVM_ENABLE_ZSTD=ON \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+    -DLLVM_AMDGPU_NEXT_GEN_COMPILER=ON \
+    -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF \
+    -DLLVM_TOOL_LLD_BUILD=ON \
+    -DROCM_DEVICE_LIB_DIR="/opt/rocm/amdgpu/lib" \
+    -DDEVICE_LIBS_LIB_DIR="/opt/rocm/amdgpu/lib" \
+    -DCLANG_DEFAULT_RTLIB="compiler-rt" \
+    -DCLANG_DEFAULT_UNWINDLIB="libunwind" \
+    -DLLVM_ENABLE_CUDA=OFF \
+    -DCLANG_ENABLE_CUDA=OFF \
+    -DCMAKE_POLICY_DEFAULT_CMP0146=OLD \
+    -DLLVM_BUILD_MAIN_SRC_DIR_FOR_COMPONENTS=ON \
+    -DLLVM_EXPORT_ALL_SYMBOLS=ON \
+    -DLLVM_DISTRIBUTION_COMPONENTS="LLVM;MLIR;clang;lld;LTO;Remarks;llvm-libraries;mlir-libraries;mlir-cmake-exports;clang-resource-headers;openmp;builtins;compiler-rt;llvm-config;FileCheck;not;count;mlir-opt;mlir-lsp-server;runtimes"
+     
+ninja -j$(nproc) 
+sudo rm -rf /opt/rocm/llvm
+sudo mkdir -p /opt/rocm/llvm
+sudo ninja install
 
-
-
+##
 
 
 
