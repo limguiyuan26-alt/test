@@ -642,12 +642,14 @@ FAILED.
 ##
 cd ~/llvm-project/build
 rm -rf *
+unset FC
+unset F90
 
 cmake -G "Ninja" ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang;lldb;polly;bolt" \
-    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp;flang-rt" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
     -DAMDGPU_TARGETS="gfx1151" \
     -DCLANG_OFFLOAD_DEFAULT_DEVICE=amdgcn-amd-amdhsa \
@@ -657,31 +659,53 @@ cmake -G "Ninja" ../llvm \
     -DHIP_PATH=/opt/rocm \
     -DDEFAULT_SYSROOT=/opt/rocm \
     -DCLANG_DEFAULT_ROCM_DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib \
+    -DROCM_DEVICE_LIB_DIR="/opt/rocm/amdgpu/lib" \
+    -DDEVICE_LIBS_LIB_DIR="/opt/rocm/amdgpu/lib" \
     -DAMD_DEVICE_LIBS_PREFIX=/opt/rocm \
     -DHIP_PLATFORM=amd \
     -DCLANG_ENABLE_HIP=ON \
     -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
-    -DMLIR_ROCM_RUNNER_ENABLED=ON \
-    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
-    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DAMDGPU_TARGETS_TO_BUILD="gfx1151" \
+    -DCLANG_DEFAULT_LINKER=lld \
+    -DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
+    -DLLVM_AMDGPU_ALLOW_ALL=ON \
+    -DMLIR_NVVM_EMBED_LIBDEVICE=ON \
+    -DLLVM_DEFAULT_TARGET_TRIPLE=amdgcn-amd-amdhsa \
     -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
-    -DMLIR_ENABLE_EXPORT_DYNAMIC_SYMBOLS=ON \
-    -DMLIR_LINK_MLIR_DYLIB=ON \
     -DMLIR_BUILD_MLIR_DYLIB=ON \
-    -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
+    -DMLIR_BUILD_MLIR_C_DYLIB=ON \
+    -DMLIR_LINK_MLIR_DYLIB=ON \
     -DMLIR_ENABLE_AGGREGATE_OBJECTS=ON \
-    -DMLIR_EXPORT_ALL=ON \
-    -DMLIR_INCLUDE_CONVERSIONS=ON \
-    -DMLIR_INCLUDE_TRANSLATIONS=ON \
-    -DCMAKE_C_FLAGS="-O3 -march=native" \
-    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
-    -DLLVM_ENABLE_ASSERTIONS=ON \
-    -DLLVM_ENABLE_RTTI=ON \
-    -DLLVM_ENABLE_EH=OFF \
-    -DLLVM_ENABLE_LTO=OFF \
+    -DMLIR_INSTALL_AGGREGATE_OBJECTS=ON \
+    -DMLIR_EXPORT_DYNAMIC_SYMBOLS=ON \
+    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
+    -DMLIR_ENABLE_ROCM_RUNNER=ON \
+    -DMLIR_ENABLE_CUDA_RUNNER=OFF \
+    -DMLIR_ENABLE_CUDA_CONVERSIONS=OFF \
+    -DMLIR_ENABLE_VULKAN_RUNNER=OFF \
+    -DMLIR_ENABLE_SPIRV_CPU_RUNNER=OFF \
+    -DMLIR_ENABLE_SYCL_RUNNER=OFF \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_PYTHON_BINDINGS_VERSION_LOCKED=ON \
+    -DPython3_EXECUTABLE=$(which python3) \
+    -DMLIR_ENABLE_PDL_IN_PATTERNMATCH=ON \
+    -DMLIR_ENABLE_EXPENSIVE_PATTERN_API_CHECKS=ON \
+    -DMLIR_INCLUDE_TESTS=OFF \
+    -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
+    -DMLIR_ENABLE_NVPTXCOMPILER=OFF \
+    -DMLIR_ENABLE_LEVELZERO_RUNNER=OFF \
+    -DMLIR_ROCM_RUNNER_ENABLED=ON \
     -DLLVM_BUILD_LLVM_DYLIB=ON \
     -DLLVM_LINK_LLVM_DYLIB=ON \
     -DLLVM_DYLIB_EXPORT_ALL=ON \
+    -DCMAKE_C_FLAGS="-O3 -march=native" \
+    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
+    -DCMAKE_ASM_FLAGS="-O3 -march=native" \
+    -DCMAKE_ASM_COMPILER_WORKS=ON \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=ON \
+    -DLLVM_ENABLE_LTO=OFF \
     -DLLVM_BUILD_REMARKS=ON \
     -DLLVM_ENABLE_Z3_SOLVER=OFF \
     -DLLVM_ENABLE_ZLIB=ON \
@@ -695,22 +719,38 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_AMDGPU_NEXT_GEN_COMPILER=ON \
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF \
     -DLLVM_TOOL_LLD_BUILD=ON \
-    -DROCM_DEVICE_LIB_DIR="/opt/rocm/amdgpu/lib" \
-    -DDEVICE_LIBS_LIB_DIR="/opt/rocm/amdgpu/lib" \
     -DCLANG_DEFAULT_RTLIB="compiler-rt" \
     -DCLANG_DEFAULT_UNWINDLIB="libunwind" \
     -DLLVM_ENABLE_CUDA=OFF \
     -DCLANG_ENABLE_CUDA=OFF \
-    -DCMAKE_POLICY_DEFAULT_CMP0146=OLD \
-    -DLLVM_BUILD_MAIN_SRC_DIR_FOR_COMPONENTS=ON \
-    -DLLVM_EXPORT_ALL_SYMBOLS=ON \
-    -DFlang_BUILD_NEW_RUNTIME=OFF \
-    -DLLVM_DISTRIBUTION_COMPONENTS="LLVM;MLIR;clang;lld;LTO;Remarks;llvm-libraries;mlir-libraries;mlir-cmake-exports;clang-resource-headers;openmp;builtins;compiler-rt;llvm-config;FileCheck;not;count;mlir-opt;mlir-lsp-server;runtimes"
-     
+    -DCMAKE_Fortran_COMPILER=OFF \
+    -DFLANG_INCLUDE_TESTS=OFF \
+    -DFLANG_BUILD_EXAMPLES=OFF \
+    -DCMAKE_POLICY_DEFAULT_CMP0146=OLD 
+    
 ninja -j$(nproc) 
 sudo rm -rf /opt/rocm/llvm
 sudo mkdir -p /opt/rocm/llvm
 sudo ninja install
+
+##
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
+NucBox-EVO-X2:~/llvm-project/amd/device-libs/build$ ls $LLVM_PATH/bin/llvm-link
+ls $LLVM_PATH/lib/cmake/llvm/LLVMConfig.cmake
+/opt/rocm/llvm/bin/llvm-link
+/opt/rocm/llvm/lib/cmake/llvm/LLVMConfig.cmake
+
+cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="$LLVM_PATH" \
+  -DLLVM_DIR="$LLVM_PATH/lib/cmake/llvm" \
+  -DCMAKE_C_COMPILER="$LLVM_PATH/bin/clang" \
+  -DCMAKE_CXX_COMPILER="$LLVM_PATH/bin/clang++"
 
 ##
 
@@ -856,8 +896,57 @@ if [ -d "$HOME/rocm_env" ]; then
 fi
 
 
+##
+# --- 1. ROCm & LLVM Path Sovereignty ---
+# The Absolute Truth: /opt/rocm is the Root, /opt/rocm/llvm is the Executioner
+export ROCM_PATH=/opt/rocm
+export LLVM_PATH=/opt/rocm/llvm
+
+# Hierarchy: Prioritize your custom standard-build tools
+export PATH=$LLVM_PATH/bin:$ROCM_PATH/bin:$PATH
+
+# REMOVE the GCC-14 path. Clang knows how to find its own runtimes.
+export LD_LIBRARY_PATH=$LLVM_PATH/lib:$ROCM_PATH/lib:$LD_LIBRARY_PATH
+
+# --- 2. AMD 8060S (gfx1151) Hardware Identity ---
+# Direct mapping to the silicon truth
+export HCC_AMDGPU_TARGET=gfx1151
+export PYTORCH_ROCM_ARCH=gfx1151
+export HIP_PLATFORM=amd
+export HIP_RUNTIME=amd
+export HIP_COMPILER=clang
+
+# This is where ROCm-Device-Libs MUST be installed for Clang to see them
+export DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib
+
+# --- 3. Sequential Causality Enforcement ---
+# Use the Standardized Clang as the system-wide executioner
+export CC=$LLVM_PATH/bin/clang
+export CXX=$LLVM_PATH/bin/clang++
 
 
+# --- 3. Auto-Activation of the Python Nation ---
+if [ -d "$HOME/rocm_env" ]; then
+    source "$HOME/rocm_env/bin/activate"
+    
+    # 1. Verify 8060S Hardware Substrate
+    if [ -e /dev/kfd ] && [ -e /dev/dri/renderD128 ]; then
+        GPU_STATUS="READY"
+    else
+        GPU_STATUS="DISCONNECTED"
+    fi
+
+    # 2. Locate the HIPIFY Translator
+    HIPIFY_BIN=$(which hipify-perl 2>/dev/null)
+    
+    # 3. Output the Truth for the AI Observer
+    echo ">>> [8060S] Sovereign Environment Active. Status: $GPU_STATUS"
+    if [ ! -z "$HIPIFY_BIN" ]; then
+        echo ">>> [HIPIFY] Translator Armed: $HIPIFY_BIN"
+    else
+        echo ">>> [HIPIFY] Translator Missing from PATH."
+    fi
+fi
 
 
 
