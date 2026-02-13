@@ -45,8 +45,8 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_INCLUDE_BENCHMARKS=OFF \
     -DLLVM_INCLUDE_DOCS=OFF \
     -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
-    -DLLVM_INSTALL_UTILS=ON
-
+    -DLLVM_INSTALL_UTILS=ON 
+ 
 # Execute with immediate panic on failure
 ninja -j$(nproc) && sudo ninja install
 
@@ -418,8 +418,198 @@ cmake -G "Ninja" .. \
 ninja
 sudo ninja install
 ##
+cd ~/llvm-project/amd/comgr/build
+rm -rf *
 
+cmake -G "Ninja" .. \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DCMAKE_PREFIX_PATH=/opt/rocm/llvm \
+    -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+    -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+    -DLLVM_DIR=/opt/rocm/llvm/lib/cmake/llvm \
+    -DBUILD_SHARED_LIBS=ON \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCOMGR_LLVM_LINK_STATIC=ON
 
+ninja
+sudo ninja install
+nm -D /opt/rocm/lib/libamd_comgr.so.3 | grep "finalizeLLVMOptimizationRemarks"
+FAILED
+
+NucBox-EVO-X2:~/llvm-project$ grep -r "finalizeLLVMOptimizationRemarks" llvm/lib llvm/include
+llvm/lib/IR/LLVMRemarkStreamer.cpp:  finalizeLLVMOptimizationRemarks(*Context);
+llvm/lib/IR/LLVMRemarkStreamer.cpp:void llvm::finalizeLLVMOptimizationRemarks(LLVMContext &Context) {
+llvm/include/llvm/IR/LLVMRemarkStreamer.h:/// finalizeLLVMOptimizationRemarks() is called before the file is destroyed or
+llvm/include/llvm/IR/LLVMRemarkStreamer.h:/// \ref finalizeLLVMOptimizationRemarks() is called.
+llvm/include/llvm/IR/LLVMRemarkStreamer.h:LLVM_ABI void finalizeLLVMOptimizationRemarks(LLVMContext &Context);
+
+[192/193] Install the project...
+-- Install configuration: "Release"
+-- Installing: /opt/rocm/lib/libamd_comgr.so.3.0.0
+-- Up-to-date: /opt/rocm/lib/libamd_comgr.so.3
+-- Set non-toolchain portion of runtime path of "/opt/rocm/lib/libamd_comgr.so.3.0.0" to ""
+-- Up-to-date: /opt/rocm/lib/libamd_comgr.so
+-- Installing: /opt/rocm/include/amd_comgr/amd_comgr.h
+-- Up-to-date: /opt/rocm/share/doc/amd_comgr/README.md
+-- Up-to-date: /opt/rocm/share/doc/amd_comgr/LICENSE.txt
+-- Installing: /opt/rocm/lib/cmake/amd_comgr/amd_comgr-config.cmake
+-- Installing: /opt/rocm/lib/cmake/amd_comgr/amd_comgr-targets.cmake
+-- Installing: /opt/rocm/lib/cmake/amd_comgr/amd_comgr-targets-release.cmake
+-- Installing: /opt/rocm/lib/cmake/amd_comgr/amd_comgr-config-version.cmake
+NucBox-EVO-X2:~/llvm-project/amd/comgr/build$ nm -D /opt/rocm/lib/libamd_comgr.so.3 | grep "finalizeLLVMOptimizationRemarks"
+                 U _ZN4llvm31finalizeLLVMOptimizationRemarksERNS_11LLVMContextE@LLVM_22.0
+NucBox-EVO-X2:~/llvm-project/amd/comgr/build$ find . -name "*.o" | xargs nm -C | grep "finalizeLLVMOptimizationRemarks"
+nm: ./test/source/double.o: file format not recognized
+NucBox-EVO-X2:~/llvm-project/amd/comgr/build$ 
+
+##
+cd ~/llvm-project/build
+rm -rf *
+
+cmake -G "Ninja" ../llvm \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
+    -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
+    -DAMDGPU_TARGETS="gfx1151" \
+    -DCLANG_ENABLE_HIP=ON \
+    -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
+    -DLIBOMPTARGET_AMDGCN_GFXLIST="gfx1151" \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
+    -DMLIR_ENABLE_ROCM_RUNNER=OFF \
+    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
+    -DCMAKE_C_FLAGS="-O3 -march=native" \
+    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=OFF \
+    -DLLVM_ENABLE_LTO=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DLLVM_DYLIB_EXPORT_ALL=ON \
+    -DLLVM_BUILD_REMARKS=ON \
+    -DLLVM_ENABLE_ZLIB=ON \
+    -DLLVM_ENABLE_ZSTD=ON \
+    -DLLVM_DISTRIBUTION_COMPONENTS="llvm-libraries;clang;lld;LTO;Remarks"
+
+NucBox-EVO-X2:~/llvm-project/build$ nm -D /opt/rocm/llvm/lib/libLLVM.so | grep "finalizeLLVMOptimizationRemarks"
+0000000000c04560 T _ZN4llvm31finalizeLLVMOptimizationRemarksERNS_11LLVMContextE@@LLVM_22.0
+NucBox-EVO-X2:~/llvm-project/build$ nm -D /opt/rocm/lib/libamd_comgr.so | grep "finalizeLLVMOptimizationRemarks"
+                 U _ZN4llvm31finalizeLLVMOptimizationRemarksERNS_11LLVMContextE@LLVM_22.0
+NucBox-EVO-X2:~/llvm-project/build$ ldd /opt/rocm/lib/libamd_comgr.so | grep libLLVM
+        libLLVM.so.22.0git => /opt/rocm/llvm/lib/libLLVM.so.22.0git (0x000079cfe1c00000)
+NucBox-EVO-X2:~/llvm-project/build$ echo "/opt/rocm/llvm/lib" | sudo tee /etc/ld.so.conf.d/rocm-llvm.conf
+/opt/rocm/llvm/lib
+NucBox-EVO-X2:~/llvm-project/build$ sudo ldconfig
+NucBox-EVO-X2:~/llvm-project/build$ ldconfig -p | grep libLLVM.so.22.0git
+        libLLVM.so.22.0git (libc6,x86-64) => /opt/rocm/llvm/lib/libLLVM.so.22.0git
+
+##
+git submodule update --init --recursive
+mkdir -p build && cd build
+cmake -G Ninja .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_PREFIX_PATH="/opt/rocm/llvm;/opt/rocm" \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+    -DROCM_PATH=/opt/rocm \
+    -DLLVM_DIR=/opt/rocm/llvm/lib/cmake/llvm \
+    -DMLIR_DIR=/opt/rocm/llvm/lib/cmake/mlir \
+    -DROCMLIR_DRIVER_PRIMITIVE_TARGETS="gfx1151" \
+    -DBUILD_FAT_LIBROCMLIR=ON
+ninja
+sudo ninja install
+
+# Inside ~/rocm-systems/projects/rocMLIR/build
+cmake -G Ninja .. [flags from before]
+ninja
+sudo ninja install
+
+# Inside your (rocm_env)
+pip install -r ../pip_requirements.txt
+
+NucBox-EVO-X2:~/rocm-systems/projects/rocMLIR/build$ ldd -r /opt/rocm/bin/rocmlir-driver 2>&1 | grep "undefined symbol"
+undefined symbol: _ZN4mlir29registerGPUDialectTranslationERNS_15DialectRegistryE        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN4mlir30registerLLVMDialectTranslationERNS_15DialectRegistryE       (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN3lld3elf4linkEN4llvm8ArrayRefIPKcEERNS1_11raw_ostreamES7_bb        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN3lld19CommonLinkerContext7destroyEv        (/opt/rocm/lib/libMLIRRocTarget.so.2.0)
+undefined symbol: _ZN4mlir19createTosaToSCFPassEv       (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir4math32createMathExtendToSupportedTypesENS0_33MathExtendToSupportedTypesOptionsE        (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir33createArithToAMDGPUConversionPassENS_34ArithToAMDGPUConversionPassOptionsE    (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir22createTosaToTensorPassEv    (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir6amdgpu30createAmdgpuEmulateAtomicsPassENS0_31AmdgpuEmulateAtomicsPassOptionsE  (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir21createTosaToArithPassEv     (/opt/rocm/lib/libMLIRRockPipeline.so.2.0)
+undefined symbol: _ZN4mlir4math21createMathUpliftToFMAEv        (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir13bufferization33registerTransformDialectExtensionERNS_15DialectRegistryE       (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu32createAmdgpuMaskedloadToLoadPassEv   (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir5index35registerConvertIndexToLLVMInterfaceERNS_15DialectRegistryE    (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu38createAmdgpuResolveStridedMetadataPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir21createTosaToArithPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir19createTosaToSCFPassEv       (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6tensor42registerInferTypeOpInterfaceExternalModelsERNS_15DialectRegistryE      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir2ub32registerConvertUBToLLVMInterfaceERNS_15DialectRegistryE  (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir37registerConvertComplexToLLVMInterfaceERNS_15DialectRegistryE        (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math23createMathExpandOpsPassEv      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu30createAmdgpuEmulateAtomicsPassEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math26createMathSincosFusionPassEv   (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir6amdgpu29createAmdgpuFoldMemRefOpsPassEv      (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir4math32createMathExtendToSupportedTypesEv     (/opt/rocm/bin/rocmlir-driver)
+undefined symbol: _ZN4mlir33createArithToAMDGPUConversionPassEv (/opt/rocm/bin/rocmlir-driver)
+NucBox-EVO-X2:~/rocm-systems/projects/rocMLIR/build$ 
+
+Failed.
+##
+cd ~/llvm-project/build
+rm -rf *
+
+cmake -G "Ninja" ../llvm \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
+    -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;flang" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
+    -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
+    -DAMDGPU_TARGETS="gfx1151" \
+    -DCLANG_ENABLE_HIP=ON \
+    -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
+    -DLIBOMPTARGET_AMDGCN_GFXLIST="gfx1151" \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
+    -DMLIR_ENABLE_ROCM_RUNNER=OFF \
+    -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
+    -DCMAKE_C_FLAGS="-O3 -march=native" \
+    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_EH=OFF \
+    -DLLVM_ENABLE_LTO=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DMLIR_BUILD_MLIR_DYLIB=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_BENCHMARKS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DLLVM_DYLIB_EXPORT_ALL=ON \
+    -DLLVM_BUILD_REMARKS=ON \
+    -DLLVM_ENABLE_ZLIB=ON \
+    -DLLVM_ENABLE_ZSTD=ON \
+    -DLLVM_DISTRIBUTION_COMPONENTS="llvm-libraries;clang;lld;LTO;Remarks;mlir-libraries;mlir-cmake-exports"
+
+ninja -j$(nproc) && sudo ninja install
+
+You only need to re-build LLVM if:
+    Version Mismatch: You need a newer version of LLVM (e.g., moving from 22.0 to 23.0).
+    Missing Project: You suddenly need a project you didn't include (e.g., you decided you needed Polly).
+    Broken Exports: You find a "Ghost Symbol" (like you just did) because a flag was missing.
 ##
 
 
