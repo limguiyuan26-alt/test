@@ -643,6 +643,9 @@ cd ~/llvm-project/build
 rm -rf *
 unset FC
 unset F90
+sudo chown -R $(whoami):$(whoami) ~/llvm-project/build
+sudo mkdir -p /opt/rocm/llvm
+sudo chown -R $(whoami):$(whoami) /opt/rocm
 
 cmake -G "Ninja" ../llvm \
     -DCMAKE_BUILD_TYPE=Release \
@@ -650,54 +653,37 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;lldb;polly;bolt" \
     -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
-    -DLLVM_AMDGPU_TARGET_TRIPLE=amdgcn-amd-amdhsa \
-    -DAMDGPU_TARGET_TRIPLE="amdgcn-amd-amdhsa" \
-    -DCLANG_TARGET_ARCH=x86_64 \
+    -DLIBCXX_HAS_MUSL_LIBC=OFF \
+    -DCMAKE_CXX_FLAGS="-idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+    -DCMAKE_C_FLAGS="-idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
     -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-unknown-linux-gnu \
-    -DDEFAULT_ROCM_ARCH=gfx1151 \
-    -DAMDGPU_TARGETS="gfx1151" \
     -DGPU_TARGETS="gfx1151" \
-    -DCLANG_OFFLOAD_DEFAULT_DEVICE=amdgcn-amd-amdhsa \
-    -DCLANG_DEFAULT_OFFLOAD_ARCH=gfx1151 \
     -DLIBOMPTARGET_DEVICE_ARCHS="gfx1151" \
     -DLIBOMPTARGET_AMDGCN_GFXLIST="gfx1151" \
     -DLIBOMPTARGET_DEVICE_ARCHITECTURES="gfx1151" \
     -DLIBOMPTARGET_FORCE_DLOPEN_LIBCUDA=OFF \
+    -DCLANG_DEFAULT_PIE_ON_LINUX=ON \
     -DROCM_PATH=/opt/rocm \
-    -DHIP_PATH=/opt/rocm \
-    -DDEFAULT_SYSROOT=/opt/rocm \
-    -DCLANG_DEFAULT_ROCM_DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib \
-    -DROCM_DEVICE_LIB_DIR="/opt/rocm/amdgpu/lib" \
-    -DDEVICE_LIBS_LIB_DIR="/opt/rocm/amdgpu/lib" \
     -DLIBOMPTARGET_AMDGCN_INSTALL_PATH=/opt/rocm/amdgpu/lib \
     -DAMD_DEVICE_LIBS_PREFIX=/opt/rocm \
     -DHIP_PLATFORM=amd \
-    -DHIP_AMDGPU_TARGET=gfx1151 \
-    -DCLANG_ENABLE_HIP=ON \
     -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
-    -DAMDGPU_TARGETS_TO_BUILD="gfx1151" \
     -DCLANG_DEFAULT_LINKER=lld \
     -DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
-    -DLLVM_AMDGPU_ALLOW_ALL=ON \
     -DMLIR_ROCM_PATH=/opt/rocm \
     -DMLIR_NVVM_EMBED_LIBDEVICE=OFF \
     -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
-    -DMLIR_BUILD_MLIR_DYLIB=ON \
     -DMLIR_BUILD_MLIR_C_DYLIB=ON \
     -DMLIR_LINK_MLIR_DYLIB=ON \
-    -DMLIR_ENABLE_AGGREGATE_OBJECTS=ON \
     -DMLIR_INSTALL_AGGREGATE_OBJECTS=ON \
-    -DMLIR_EXPORT_DYNAMIC_SYMBOLS=ON \
     -DMLIR_GPU_TO_ROCM_PASS_ENABLE=ON \
     -DMLIR_ENABLE_ROCM_CONVERSIONS=ON \
     -DMLIR_ENABLE_ROCM_RUNNER=ON \
     -DMLIR_ENABLE_CUDA_RUNNER=OFF \
-    -DMLIR_ENABLE_CUDA_CONVERSIONS=OFF \
     -DMLIR_ENABLE_VULKAN_RUNNER=OFF \
     -DMLIR_ENABLE_SPIRV_CPU_RUNNER=OFF \
     -DMLIR_ENABLE_SYCL_RUNNER=OFF \
     -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
-    -DMLIR_PYTHON_BINDINGS_VERSION_LOCKED=ON \
     -DPython3_EXECUTABLE=$(which python3) \
     -DMLIR_ENABLE_PDL_IN_PATTERNMATCH=ON \
     -DMLIR_ENABLE_EXPENSIVE_PATTERN_API_CHECKS=ON \
@@ -705,26 +691,19 @@ cmake -G "Ninja" ../llvm \
     -DMLIR_INCLUDE_INTEGRATION_TESTS=ON \
     -DMLIR_ENABLE_NVPTXCOMPILER=OFF \
     -DMLIR_ENABLE_LEVELZERO_RUNNER=OFF \
-    -DMLIR_ROCM_RUNNER_ENABLED=ON \
-    -DMLIR_ENABLE_ASSERTIONS=ON \
-    -DMLIR_ENABLE_VERBOSE=ON \
-    -DMLIR_ENABLE_SHARED_LINALG_OPS=ON \
-    -DMLIR_ENABLE_BINDINGS_PYTHON_INTERNAL=ON \
-    -DMLIR_GPU_BINARY_OPERATIONS_ENABLED=ON \
-    -DMLIR_ENABLE_GPU_RUNTIME=ON \
-    -DMLIR_ENABLE_GPU_BACKEND=ON \
+    -DMLIR_ENABLE_ROCM_RUNNER=ON \
+    -DMLIR_BUILD_MLIR_C_DYLIB=ON \
+    -DMLIR_LINK_MLIR_DYLIB=ON \
+    -DMLIR_ENABLE_BINDINGS_PYTHON=ON \
+    -DMLIR_INCLUDE_INTEGRATION_TESTS=ON \
+    -DMLIR_ROCM_PATH=/opt/rocm \
+    -DMLIR_GPU_TO_ROCM_PASS_ENABLE=ON \
     -DLLVM_BUILD_LLVM_DYLIB=ON \
     -DLLVM_LINK_LLVM_DYLIB=ON \
-    -DLLVM_DYLIB_EXPORT_ALL=ON \
-    -DCMAKE_C_FLAGS="-O3 -march=native" \
-    -DCMAKE_CXX_FLAGS="-O3 -march=native" \
-    -DCMAKE_ASM_FLAGS="-O3 -march=native" \
-    -DCMAKE_ASM_COMPILER_WORKS=ON \
     -DLLVM_ENABLE_ASSERTIONS=ON \
     -DLLVM_ENABLE_RTTI=ON \
     -DLLVM_ENABLE_EH=OFF \
     -DLLVM_ENABLE_LTO=OFF \
-    -DLLVM_BUILD_REMARKS=ON \
     -DLLVM_ENABLE_Z3_SOLVER=OFF \
     -DLLVM_ENABLE_ZLIB=ON \
     -DLLVM_ENABLE_ZSTD=ON \
@@ -735,35 +714,26 @@ cmake -G "Ninja" ../llvm \
     -DLLVM_INCLUDE_BENCHMARKS=OFF \
     -DLLVM_INCLUDE_DOCS=OFF \
     -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
-    -DLLVM_AMDGPU_NEXT_GEN_COMPILER=ON \
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF \
     -DLLVM_TOOL_LLD_BUILD=ON \
-    -DCLANG_DEFAULT_RTLIB="compiler-rt" \
-    -DCLANG_DEFAULT_UNWINDLIB="libunwind" \
-    -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
-    -DLLVM_ENABLE_CUDA=OFF \
-    -DCLANG_ENABLE_CUDA=OFF \
-    -DCMAKE_Fortran_COMPILER=OFF \
-    -DFLANG_INCLUDE_TESTS=OFF \
-    -DFLANG_BUILD_EXAMPLES=OFF \
     -DCMAKE_AR=$LLVM_PATH/bin/llvm-ar \
     -DCMAKE_NM=$LLVM_PATH/bin/llvm-nm \
     -DCMAKE_RANLIB=$LLVM_PATH/bin/llvm-ranlib \
     -DCMAKE_OBJCOPY=$LLVM_PATH/bin/llvm-objcopy \
     -DCMAKE_STRIP=$LLVM_PATH/bin/llvm-strip \
     -DCMAKE_READELF=$LLVM_PATH/bin/llvm-readelf \
-    -DCMAKE_HIP_COMPILER=clang++ \
-    -DHIP_ARCHITECTURES=gfx1151 \
     -DLLVM_ENABLE_WERROR=OFF \
-    -DLLVM_ENABLE_DEBUG_INFO=ON \
-    -DLLVM_ENABLE_TESTS=ON \
-    -DLLVM_INCLUDE_TESTS=ON \
+    -DLLVM_INCLUDE_TESTS=OFF \
     -DLLVM_ENABLE_LLD=ON \
-    -DLLVM_USE_SANITIZER="Address;Undefined" \
+    -DCLANG_DEFAULT_RTLIB="compiler-rt" \
+    -DCLANG_DEFAULT_UNWINDLIB="libunwind" \
+    -DCLANG_DEFAULT_CXX_STDLIB="libc++" \
+    -DCLANG_DEFAULT_LINKER="lld" \
+    -DCLANG_CONFIG_FILE_SYSTEM_DIR="/opt/rocm/llvm/bin" \
     -DCMAKE_POLICY_DEFAULT_CMP0146=OLD 
     
-ninja -j$(nproc) 
-sudo ninja install
+ninja -j$(nproc)
+ninja install/strip
 
 ##
 
@@ -773,17 +743,121 @@ ls $LLVM_PATH/lib/cmake/llvm/LLVMConfig.cmake
 /opt/rocm/llvm/bin/llvm-link
 /opt/rocm/llvm/lib/cmake/llvm/LLVMConfig.cmake
 
-cd build
+mkdir build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm/amdgpu \
+  -DCMAKE_PREFIX_PATH="/opt/rocm/llvm" \
+  -DLLVM_DIR="/opt/rocm/llvm/lib/cmake/llvm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+  -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -B/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu"
+
+sudo ninja install
+##
+cd ~/llvm-project/amd/comgr
+mkdir build && cd build
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm/llvm;/opt/rocm/amdgpu" \
+  -DLLVM_DIR="/opt/rocm/llvm/lib/cmake/llvm" \
+  -DClang_DIR="/opt/rocm/llvm/lib/cmake/clang" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -D_GLIBCXX_USE_CXX11_ABI=1 -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_C_FLAGS="--gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -B/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu"
+
+sudo ninja install
+ls -l /opt/rocm/lib/libamd_comgr.so
+lrwxrwxrwx 1 redyy redyy 17 Feb 13 03:58 /opt/rocm/lib/libamd_comgr.so -> libamd_comgr.so.3
+##
+# Move to source root to apply the fix
+cd /home/redyy/llvm-project/amd/libhipcxx
+# Comment out the test subdirectory in the root
+sed -i 's/^add_subdirectory(test)/# add_subdirectory(test)/' CMakeLists.txt
+# Comment out the atomic_codegen in the test root (secondary defense)
+sed -i 's/^add_subdirectory(atomic_codegen)/# add_subdirectory(atomic_codegen)/' test/CMakeLists.txt
+
+cd /home/redyy/llvm-project/amd/libhipcxx
+# Physically remove the test directory to ensure an Air Gap
+rm -rf test
+# Create a dummy empty CMakeLists.txt so the parent doesn't panic
+mkdir test
+touch test/CMakeLists.txt
+
+cd /home/redyy/llvm-project/amd/libhipcxx/build
 rm -rf *
 
 cmake -G "Ninja" .. \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/opt/rocm \
-  -DCMAKE_PREFIX_PATH="$LLVM_PATH" \
-  -DLLVM_DIR="$LLVM_PATH/lib/cmake/llvm" \
-  -DCMAKE_C_COMPILER="$LLVM_PATH/bin/clang" \
-  -DCMAKE_CXX_COMPILER="$LLVM_PATH/bin/clang++"
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DCMAKE_HIP_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DCMAKE_HIP_COMPILER_FORCED=ON \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DENABLE_TESTS=OFF \
+  -DENABLE_LIBCUDACXX_TESTS=OFF \
+  -DCMAKE_HIP_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -B/usr/lib/x86_64-linux-gnu -L/usr/lib/x86_64-linux-gnu"
 
+sudo ninja install
+ls -l /opt/rocm/include/libhipcxx/hip
+sudo mkdir -p /opt/rocm/include/hip/amd_detail
+sudo ln -s /opt/rocm/include/libhipcxx/hip /opt/rocm/include/hip/amd_detail/libhipcxx
+
+NucBox-EVO-X2:~/llvm-project/amd/libhipcxx/build$ ls /opt/rocm/include/hip/amd_detail/libhipcxx
+__atomic   __cccl_config   __fwd           __memory_resource  __semaphore    version
+atomic     __cmath         __latch         memory_resource    semaphore      __warp
+__barrier  cmath           latch           __numeric          std            warp
+barrier    discard_memory  __mdspan        numeric            stream_ref     work_stealing
+__bit      __functional    mdspan          __ptx              __type_traits
+bit        functional      __memcpy_async  ptx                type_traits
+##
+cd ~/llvm-project/amd/hipcc
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DHIPCC_BACKEND=clang \
+  -DHIP_COMPILER=clang \
+  -DHIP_PLATFORM=amd \
+  -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ --gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+  -DCMAKE_C_FLAGS="--gcc-toolchain=/usr -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu"
+
+ninja
+sudo ninja install
+# Create the parent directory if it's missing
+sudo mkdir -p /opt/rocm/lib/llvm
+
+# Link the true bin directory to the location hipcc expects
+sudo ln -s /opt/rocm/llvm/bin /opt/rocm/lib/llvm/bin
+
+ls -l /opt/rocm/lib/llvm/bin/clang++
+
+ls -l /opt/rocm/lib/llvm/bin/clang++
+lrwxrwxrwx 1 redyy redyy 5 Feb 14 04:41 /opt/rocm/lib/llvm/bin/clang++ -> clang
+NucBox-EVO-X2:~/llvm-project/amd/hipcc/build$ hipcc --version
+HIP version: 7.2.26015-fc0010cf6a
+clang version 22.0.0git (https://github.com/ROCm/llvm-project.git 7b800a19466229b8479a78de19143dc33c3ab9b5)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /opt/rocm/llvm/bin
+Build config: +assertions
 ##
 
 # --- 1. ROCm & LLVM Path Sovereignty ---
@@ -798,7 +872,6 @@ export LLVM_PATH=/opt/rocm/llvm
     exit 1; 
 }
 # Verify LLVM Path (The Executioner)
-# Note: If this is your first build, manually run 'sudo mkdir -p /opt/rocm/llvm' first.
 [ ! -d "$LLVM_PATH" ] && { 
     echo -e "\e[1;31m!!! [FATAL] LLVM_PATH MISSING: $LLVM_PATH\e[0m"; 
     echo "Truth: The compiler output territory has not been established."; 
@@ -823,8 +896,6 @@ if [ ! -d "$ROCM_PATH/bin" ]; then
     echo -e "\e[1;31m!!! [FATAL] ROCm Binaries Missing: $ROCM_PATH/bin\e[0m"
     exit 1
 fi
-# Hierarchy: Prioritize your custom standard-build tools
-export PATH=$LLVM_PATH/bin:$ROCM_PATH/bin:$PATH
 echo ">>> [PATH] Hierarchy Established. Executioners at the front."
 
 # REMOVE the GCC-14 path. Clang knows how to find its own runtimes.
@@ -848,39 +919,14 @@ echo ">>> [LINKER] Library Sovereignty Established. Ghost paths eliminated."
 
 # --- 2. AMD 8060S (gfx1151) Hardware Identity ---
 # Direct mapping to the silicon truth
-export HSA_OVERRIDE_GFX_VERSION=11.5.1
 export HCC_AMDGPU_TARGET=gfx1151
 export PYTORCH_ROCM_ARCH=gfx1151
 export HIP_PLATFORM=amd
 export HIP_RUNTIME=amd
 export HIP_COMPILER=clang
 
-# This is where ROCm-Device-Libs MUST be installed for Clang to see them
-export DEVICE_LIB_PATH=/opt/rocm/amdgpu/lib
-OCML_CHECK=$(find "$DEVICE_LIB_PATH" -name "ocml.bc" 2>/dev/null)
-if [ -z "$OCML_CHECK" ]; then
-    echo -e "\e[1;31m[ERROR 01: BITCODE MISSING]\e[0m"
-    echo "Location: $DEVICE_LIB_PATH"
-    echo "Reason: The silicon instructions (ocml.bc) are not present at the defined path."
-    echo "Fix: Check if 'rocm-device-libs' is installed or if the path is wrong."
-    exit 1 
-fi
-# --- 1.6 Hardware Substrate Verification ---
-AMDGPU_ARCH_BIN="$LLVM_PATH/bin/amdgpu-arch"
-if [ -f "$AMDGPU_ARCH_BIN" ]; then
-    DETECTED_ARCH=$($AMDGPU_ARCH_BIN | head -n 1)
-    
-    if [[ "$DETECTED_ARCH" != *"gfx1151"* ]]; then
-        echo -e "\e[1;31m[ERROR 02: HARDWARE MISMATCH]\e[0m"
-        echo "Detected:  $DETECTED_ARCH"
-        echo "Expected:  gfx1151 (Radeon 8060S)"
-        echo "Reason:    The compiler target does not match the physical silicon."
-        exit 1
-    fi
-else
-    echo -e "\e[1;33m[WARNING: TOOL MISSING]\e[0m"
-    echo "Tool: $AMDGPU_ARCH_BIN not found. Proceeding with caution..."
-fi
+
+
 # --- 1.7 Toolchain Executioner Verification ---
 # Define the tools we require for Absolute Sovereignty
 REQUIRED_TOOLS=("clang" "clang++" "ld.lld" "llvm-ar" "llvm-nm" "llvm-ranlib" "llvm-objcopy" "llvm-strip")
