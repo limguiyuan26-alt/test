@@ -1331,14 +1331,76 @@ if [ ! -d "$HIPBLASLT_INCLUDE_PATH/hipblaslt" ]; then
 fi
 echo -e "\e[1;32m>>> hipBLASLt Verified: gfx1151 Math Engine Sovereign.\e[0m"
 ##
+cd ~/rocm-libraries/projects
+git clone https://github.com/ROCm/rocm-cmake.git
+cd rocm-cmake
+mkdir build && cd build
 
+cmake -DCMAKE_INSTALL_PREFIX=/opt/rocm ..
+sudo make install
 
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-libraries/projects/rocm-cmake/build$ find /opt/rocm -name "ROCMConfig.cmake"
+/opt/rocm/share/rocm/cmake/ROCMConfig.cmake
+(rocm_env) redyy@redyy-NucBox-EVO-X2:~/rocm-libraries/projects/rocm-cmake/build$ 
 
+cd ~/rocm-libraries/projects/composablekernel
 
+# Inject gfx1151 into the supported list for GEMM Tile Ops
+sed -i 's/gfx90a;gfx942;gfx950;gfx1201/gfx90a;gfx942;gfx950;gfx1201;gfx1151/g' tile_engine/ops/gemm/CMakeLists.txt
+sed -i 's/gfx90a;gfx942;gfx950;gfx1201/gfx90a;gfx942;gfx950;gfx1201;gfx1151/g' test/ck_tile/gemm_tile_engine/CMakeLists.txt
 
+# Inject gfx1151 into the FMHA supported list
+sed -i 's/gfx9;gfx12/gfx9;gfx12;gfx1151/g' example/ck_tile/01_fmha/CMakeLists.txt
 
+# Force gfx1151 into the FMHA (Flash Attention) support list
+sed -i 's/gfx9;gfx12/gfx9;gfx12;gfx1151/g' example/ck_tile/01_fmha/CMakeLists.txt
 
+# Force gfx1151 into the Multi-D GEMM and Preshuffle GEMM lists
+sed -i 's/gfx90a;gfx942;gfx950/gfx90a;gfx942;gfx950;gfx1151/g' tile_engine/ops/gemm_multi_d/CMakeLists.txt
+sed -i 's/gfx90a;gfx942;gfx950/gfx90a;gfx942;gfx950;gfx1151/g' tile_engine/ops/gemm_preshuffle/CMakeLists.txt
 
+# 1. Update the main FMHA check to include gfx11 variants
+sed -i 's/gfx9|gfx12/gfx9|gfx11|gfx12/g' example/ck_tile/01_fmha/CMakeLists.txt
+sed -i 's/gfx9|gfx12/gfx9|gfx11|gfx12/g' test/ck_tile/fmha/CMakeLists.txt
+
+# 2. Update the Tile Engine GEMM lists to explicitly allow gfx1151
+sed -i 's/gfx1201/gfx1201;gfx1151/g' tile_engine/ops/gemm/CMakeLists.txt
+sed -i 's/gfx1201/gfx1201;gfx1151/g' test/ck_tile/gemm_tile_engine/CMakeLists.txt
+sed -i 's/gfx950)/gfx950;gfx1151)/g' tile_engine/ops/gemm_multi_d/CMakeLists.txt
+sed -i 's/gfx950)/gfx950;gfx1151)/g' tile_engine/ops/gemm_preshuffle/CMakeLists.txt
+
+# 3. Fix the broad checks in the top-level CMake
+sed -i 's/gfx1[12]/gfx1/g' profiler/src/CMakeLists.txt
+
+# 1. Fix the FMHA logical condition (The most critical part)
+sed -i 's/MATCHES "gfx9|gfx12"/MATCHES "gfx9|gfx11|gfx12"/g' example/ck_tile/01_fmha/CMakeLists.txt
+sed -i 's/MATCHES "gfx9|gfx12"/MATCHES "gfx9|gfx11|gfx12"/g' test/ck_tile/fmha/CMakeLists.txt
+
+# 2. Fix the Tile Engine GEMM logical condition
+# We look for where it checks against the list and force gfx1151 in
+sed -i 's/MATCHES "gfx90a|gfx942|gfx950|gfx1201"/MATCHES "gfx90a|gfx942|gfx950|gfx1201|gfx1151"/g' tile_engine/ops/gemm/CMakeLists.txt
+# This targets all .py files in the ops directory
+# It inserts the gfx11-to-gfx12 factory bridge right before the Exception is raised
+sed -i '/raise Exception(f"Unsupported device target {target}")/i \    if target.startswith("gfx11"):\n        return KernelComponentFactoryGfx12' example/ck_tile/01_fmha/codegen/ops/*.py
+grep -nC 2 "return KernelComponentFactoryGfx12" example/ck_tile/01_fmha/codegen/ops/*.py
+
+cd ~/rocm-libraries/projects/composablekernel/build
+rm -rf *
+
+cmake -G Ninja \
+    -D CMAKE_PREFIX_PATH="/opt/rocm;/opt/rocm/llvm" \
+    -D ROCM_DIR=/opt/rocm/share/rocm/cmake \
+    -D CMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+    -D CMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+    -D GPU_TARGETS="gfx1151" \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D BUILD_DEV=OFF \
+    -D BUILD_CK_TESTS=OFF \
+    -D BUILD_CK_EXAMPLES=OFF \
+    -D BUILD_CK_PROFILER=ON \
+    ..
+
+ninja -j$(nproc)
 
 
 
