@@ -836,7 +836,528 @@ cmake -G "Ninja" .. \
 
 ninja
 ninja install
+ls -l /opt/rocm/lib/libhsakmt.so
+ls -l /opt/rocm/include/hsakmt/hsakmt.h
 ##
+cd ~/rocm-systems/projects/rocr-runtime
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DIMAGE_SUPPORT=ON
+ninja
+ninja install
+ls -l /opt/rocm/lib/libhsa-runtime64.so
+##
+cd ~/rocm-systems/projects/rocminfo
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DROCM_DIR=/opt/rocm
+
+ninja
+ninja install
+/opt/rocm/bin/rocminfo
+##
+cd ~/rocm-systems/projects/rocm-smi-lib
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++"
+
+ninja
+ninja install
+/opt/rocm/bin/rocm-smi
+##
+cd ~/rocm-systems/projects/clr
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm/llvm;/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DCLR_BUILD_HIP=ON \
+  -DCLR_BUILD_OCL=OFF \
+  -DHIP_COMMON_DIR="/home/redyy/rocm-systems/projects/hip" \
+  -DHIPCC_BIN_DIR="/opt/rocm/bin" \
+  -DROCM_PATH=/opt/rocm \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DDEVICE_LIB_KIND=amdgcn
+
+ninja
+ninja install
+
+ls -l /opt/rocm/lib/libamdhip64.so
+ldd /opt/rocm/lib/libamdhip64.so | grep hsa
+##
+cd ~/rocm-systems/projects/rocm-core
+mkdir -p build && cd build
+rm -rf *
+
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DROCM_VERSION="7.2.0" \
+  -DVERSION_MAJOR=7 \
+  -DVERSION_MINOR=2 \
+  -DVERSION_PATCH=0
+
+ninja
+ninja install
+cat /opt/rocm/.info/version
+##
+cd ~/rocm-systems/projects/amdsmi
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++"
+
+ninja
+ninja install
+##
+cd ~/rocm-systems/projects/rocprofiler-register
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++"
+
+ninja
+ninja install
+ls -l /opt/rocm/include/rocprofiler-register/rocprofiler-register.h
+##
+cd ~/rocm-systems/projects/rocprofiler-sdk
+mkdir -p build && cd build
+rm -rf *
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DROCPROFILER_BUILD_TESTS=OFF \
+  -DROCPROFILER_BUILD_SAMPLES=OFF \
+  -DROCPROFILER_BUILD_OTF2=OFF
+
+ninja
+ninja install
+
+FAILED
+##
+cd ~/rocm-systems/projects/roctracer
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DCPACK_GENERATOR=DEB
+
+ninja
+ninja install
+ls -l /opt/rocm/lib/libroctracer64.so
+##
+cd ~/rocm-systems/projects/rocMLIR
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++" \
+  -DROCM_PATH=/opt/rocm \
+  -DGPU_TARGETS="gfx1151" \
+  -DENABLE_ROCMLIR_TESTS=OFF
+ninja
+ninja install
+##
+cd ~/rocm-systems/projects/aqlprofile
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_C_COMPILER="/opt/rocm/llvm/bin/clang" \
+  -DCMAKE_CXX_COMPILER="/opt/rocm/llvm/bin/clang++"
+
+ninja
+ninja install
+##
+cd ~/rocm-libraries-therock-7.11/projects/rocprim
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DBUILD_BENCHMARK=OFF \
+  -DBUILD_TEST=OFF
+
+ninja install
+##
+cd ~/rocm-libraries-therock-7.11/projects/hipcub
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DBUILD_TEST=OFF
+
+ninja install
+##
+cd ~/rocm-libraries-therock-7.11/projects/rocblas
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+  -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+  -DAMDGPU_TARGETS="gfx1151" \
+  -DBUILD_WITH_TENSILE=ON \
+  -DBUILD_BENCHMARK=OFF \
+  -DBUILD_TEST=OFF \
+  -DBUILD_CLIENTS_TESTS=OFF \
+  -DBUILD_CLIENTS_BENCHMARKS=OFF \
+  -DBUILD_CLIENTS_SAMPLES=OFF
+
+ninja
+sudo ninja install
+##
+cd ~/rocm-libraries-therock-7.11/projects/hipblas-common
+mkdir -p build && cd build
+rm -rf *
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm"
+
+ninja install
+##
+cd ~/rocm-libraries/projects/hipblaslt/external_include/spdlog
+git checkout include/spdlog/common.h include/spdlog/cfg/helpers.h
+
+cd ~/rocm-libraries/projects/hipblaslt
+mkdir -p external_deps
+cd external_deps
+if [ ! -d "googletest" ]; then
+  git clone https://github.com/google/googletest.git
+  cd googletest && git checkout v1.14.0 && cd ..
+fi
+ls $(pwd)/googletest/googlemock/include/gmock/gmock.h
+
+cd ~/rocm-libraries/projects/hipblaslt/build
+rm -rf CMakeCache.txt CMakeFiles
+
+cmake -G "Ninja" .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=/opt/rocm \
+  -DCMAKE_PREFIX_PATH="/opt/rocm" \
+  -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
+  -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+  -DGPU_TARGETS="gfx1151" \
+  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+  -DHIPBLASLT_BUILD_TESTS=ON \
+  -DCMAKE_CXX_FLAGS="-I/home/redyy/rocm-libraries/projects/hipblaslt/external_include/spdlog/include -I/home/redyy/rocm-libraries/projects/hipblaslt/external_deps/googletest/googletest/include -I/home/redyy/rocm-libraries/projects/hipblaslt/external_deps/googletest/googlemock/include -DSPDLOG_USE_STD_FORMAT -DSPDLOG_HEADER_ONLY"
+
+ninja
+sudo ninja install
+
+sudo bash -c 'cat << EOF > /opt/rocm/bin/hipblaslt_gtest.data
+# Primitive Vector of Truth
+- name: final_verification
+  function: matmul
+  a_type: f16_r
+  b_type: f16_r
+  c_type: f16_r
+  d_type: f16_r
+  compute_type: f32_r
+  transA: N
+  transB: N
+  M: 1024
+  N: 1024
+  K: 1024
+  alpha: 1
+  beta: 0
+  norm_check: 1
+  unit_check: 1
+EOF'
+
+cd /opt/rocm/bin
+export PYTHONPATH=/home/redyy/rocm_env/lib/python3.12/site-packages
+env PYTHONPATH=$PYTHONPATH ./hipblaslt-test --yaml hipblaslt_gtest.data
+
+[----------] Global test environment tear-down
+[==========] 1473 tests from 10 test suites ran. (18000 ms total)
+[  PASSED  ] 1472 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] _/matmul_test.matmul/nightly_final_verification_f16_rf16_rf16_rf16_rf16_r_NN_1024_1024_1024_1_1024_1024_0_1024_1024_1, where GetParam() = { function: "matmul", name: "final_verification", category: "nightly", known_bug_platforms: "", alpha: 1, beta: 0, stride_a: 0x5f874f52d048, stride_b: 0x5f874f52d148, stride_c: 0x5f874f52d248, stride_d: 0x5f874f52d348, stride_e: 0x5f874f52d448, user_allocated_workspace: 134217728, M: 0x5f874f52d550, N: 0x5f874f52d650, K: 0x5f874f52d750, lda: 0x5f874f52d850, ldb: 0x5f874f52d950, ldc: 0x5f874f52da50, ldd: 0x5f874f52db50, lde: 0x5f874f52dc50, batch_count: 1, iters: 10, cold_iters: 2, algo: 0, solution_index: -1, requested_solution_num: 1, a_type: f16_r, b_type: f16_r, c_type: f16_r, d_type: f16_r, compute_type: f16_r, compute_input_typeA: non-supported type, compute_input_typeB: non-supported type, scale_type: non-supported type, initialization: "rand_int", gpu_arch: "", gpu_arch_exclude: "", pad: 4096, grouped_gemm: 0, threads: 0, streams: 0, devices: 
+
+ 1 FAILED TEST
+hipBLASLt version: 100201
+hipBLASLt git version: 5b515cf1bc
+command line: ./hipblaslt-test --yaml hipblaslt_gtest.data 
+(rocm_env) redyy@redyy-NucBox-EVO-X2:/opt/rocm/bin$ 
+
+(rocm_env) redyy@redyy-NucBox-EVO-X2:/opt/rocm/bin$ ./hipblaslt-bench -m 1024 -n 1024 -k 1024 --a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r -v
+hipBLASLt version: 100201
+hipBLASLt git version: 5b515cf1bc
+Query device success: there are 1 devices. (Target device ID is 0)
+Device ID 0 : AMD Radeon Graphics gfx1151
+with 50.4 GB memory, max. SCLK 2900 MHz, max. MCLK 1000 MHz, compute capability 11.5
+maxGridDimX 2147483647, sharedMemPerBlock 65.5 KB, maxThreadsPerBlock 1024, warpSize 32
+
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,grouped_gemm,batch_count,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,a_type,b_type,c_type,d_type,compute_type,scaleA,scaleB,scaleC,scaleD,amaxD,swizzle_a,swizzle_b,activation_type,bias_vector,bias_type,aux_type,rotating_buffer,flush,use_gpu_timer,hipblaslt-Gflops,hipblaslt-GB/s,us,CPU-Gflops,CPU-us,norm_error,atol,rtol
+    N,N,0,1,1024,1024,1024,1,1024,1048576,0,1024,1048576,1024,1048576,1024,1048576,f16_r,f16_r,f16_r,f16_r,f32_r,0,0,0,0,0,0,0,none,0,f16_r,f16_r,0,0,0,13695.7,37.3685,156.8,26.2715,81742,4.39233e-05,1e-05,0.01
+(rocm_env) redyy@redyy-NucBox-EVO-X2:/opt/rocm/bin$ ./hipblaslt-bench -m 1024 -n 1024 -k 1024 --a_type f16_r --b_type f16_r --c_type f16_r --d_type f16_r --compute_type f32_r --verify
+hipBLASLt version: 100201
+hipBLASLt git version: 5b515cf1bc
+Query device success: there are 1 devices. (Target device ID is 0)
+Device ID 0 : AMD Radeon Graphics gfx1151
+with 50.4 GB memory, max. SCLK 2900 MHz, max. MCLK 1000 MHz, compute capability 11.5
+maxGridDimX 2147483647, sharedMemPerBlock 65.5 KB, maxThreadsPerBlock 1024, warpSize 32
+
+Is supported 1 / Total solutions: 1
+[0]:transA,transB,grouped_gemm,batch_count,m,n,k,alpha,lda,stride_a,beta,ldb,stride_b,ldc,stride_c,ldd,stride_d,a_type,b_type,c_type,d_type,compute_type,scaleA,scaleB,scaleC,scaleD,amaxD,swizzle_a,swizzle_b,activation_type,bias_vector,bias_type,aux_type,rotating_buffer,flush,use_gpu_timer,hipblaslt-Gflops,hipblaslt-GB/s,us,CPU-Gflops,CPU-us,norm_error,atol,rtol
+    N,N,0,1,1024,1024,1024,1,1024,1048576,0,1024,1048576,1024,1048576,1024,1048576,f16_r,f16_r,f16_r,f16_r,f32_r,0,0,0,0,0,0,0,none,0,f16_r,f16_r,0,0,0,15230.4,41.5559,141,28.0018,76691,4.39233e-05,1e-05,0.01
+(rocm_env) redyy@redyy-NucBox-EVO-X2:/opt/rocm/bin$ 
+##
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
