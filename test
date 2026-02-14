@@ -646,16 +646,27 @@ unset F90
 sudo chown -R $(whoami):$(whoami) ~/llvm-project/build
 sudo mkdir -p /opt/rocm/llvm
 sudo chown -R $(whoami):$(whoami) /opt/rocm
+export LLVM_PATH=/opt/rocm/llvm
+export LD_LIBRARY_PATH=/home/redyy/llvm-project/build/lib:$LD_LIBRARY_PATH
 
 cmake -G "Ninja" ../llvm \
+    -DCMAKE_C_COMPILER=/opt/rocm/llvm/bin/clang \
+    -DCMAKE_CXX_COMPILER=/opt/rocm/llvm/bin/clang++ \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/rocm/llvm \
     -DLLVM_ENABLE_PROJECTS="clang;lld;mlir;clang-tools-extra;lldb;polly;bolt" \
-    -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind;openmp" \
+    -DLLVM_ENABLE_RUNTIMES="compiler-rt;openmp;libcxx;libcxxabi;libunwind;libclc" \
+    -DLIBCLC_TARGETS_TO_BUILD="amdgcn--amdhsa;amdgcn--" \
+    -DLIBCLC_CPU_TARGETS="gfx1151" \
+    -DLIBCLC_AMDGCN_AMDHSA_DEVICES=gfx1151 \
+    -DLIBCLC_TARGETS_TO_BUILD="amdgcn--amdhsa" \
+    -DLIBCLC_TARGETS_TO_BUILD="amdgcn--;amdgcn--amdhsa" \
+    -DCLANG_DEFAULT_LINKER=lld \
     -DLLVM_TARGETS_TO_BUILD="X86;AMDGPU" \
     -DLIBCXX_HAS_MUSL_LIBC=OFF \
-    -DCMAKE_CXX_FLAGS="-idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
-    -DCMAKE_C_FLAGS="-idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+    -DCMAKE_C_FLAGS="-march=native -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+    -DCMAKE_CXX_FLAGS="-march=native -idirafter /usr/include -idirafter /usr/include/x86_64-linux-gnu" \
+    -DCMAKE_ASM_FLAGS="-march=native" \
     -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-unknown-linux-gnu \
     -DGPU_TARGETS="gfx1151" \
     -DLIBOMPTARGET_DEVICE_ARCHS="gfx1151" \
@@ -669,7 +680,6 @@ cmake -G "Ninja" ../llvm \
     -DHIP_PLATFORM=amd \
     -DLIBOMPTARGET_ENABLE_AMDGPU=ON \
     -DCLANG_DEFAULT_LINKER=lld \
-    -DCLANG_DEFAULT_OBJCOPY=llvm-objcopy \
     -DMLIR_ROCM_PATH=/opt/rocm \
     -DMLIR_NVVM_EMBED_LIBDEVICE=OFF \
     -DMLIR_ENABLE_EXECUTION_ENGINE=ON \
@@ -687,8 +697,8 @@ cmake -G "Ninja" ../llvm \
     -DPython3_EXECUTABLE=$(which python3) \
     -DMLIR_ENABLE_PDL_IN_PATTERNMATCH=ON \
     -DMLIR_ENABLE_EXPENSIVE_PATTERN_API_CHECKS=ON \
-    -DMLIR_INCLUDE_TESTS=ON \
-    -DMLIR_INCLUDE_INTEGRATION_TESTS=ON \
+    -DMLIR_INCLUDE_TESTS=OFF \
+    -DMLIR_INCLUDE_INTEGRATION_TESTS=OFF \
     -DMLIR_ENABLE_NVPTXCOMPILER=OFF \
     -DMLIR_ENABLE_LEVELZERO_RUNNER=OFF \
     -DMLIR_ENABLE_ROCM_RUNNER=ON \
@@ -716,12 +726,6 @@ cmake -G "Ninja" ../llvm \
     -DCOMPILER_RT_DEFAULT_TARGET_ONLY=ON \
     -DCMAKE_VISIBILITY_INLINES_HIDDEN=OFF \
     -DLLVM_TOOL_LLD_BUILD=ON \
-    -DCMAKE_AR=$LLVM_PATH/bin/llvm-ar \
-    -DCMAKE_NM=$LLVM_PATH/bin/llvm-nm \
-    -DCMAKE_RANLIB=$LLVM_PATH/bin/llvm-ranlib \
-    -DCMAKE_OBJCOPY=$LLVM_PATH/bin/llvm-objcopy \
-    -DCMAKE_STRIP=$LLVM_PATH/bin/llvm-strip \
-    -DCMAKE_READELF=$LLVM_PATH/bin/llvm-readelf \
     -DLLVM_ENABLE_WERROR=OFF \
     -DLLVM_INCLUDE_TESTS=OFF \
     -DLLVM_ENABLE_LLD=ON \
@@ -730,6 +734,31 @@ cmake -G "Ninja" ../llvm \
     -DCLANG_DEFAULT_CXX_STDLIB="libc++" \
     -DCLANG_DEFAULT_LINKER="lld" \
     -DCLANG_CONFIG_FILE_SYSTEM_DIR="/opt/rocm/llvm/bin" \
+    -DLLVM_ENABLE_LIBCXX=ON \
+    -DLIBCXX_ENABLE_EXCEPTIONS=OFF \
+    -DLIBCXX_USE_COMPILER_RT=ON \
+    -DLIBCXX_ABI=libcxxabi \
+    -DLIBCXX_INCLUDE_TESTS=OFF \
+    -DLIBCXX_ENABLE_EXAMPLES=OFF \
+    -DLIBCXX_USE_LIBCXXABI=ON \
+    -DLIBCXX_USE_LLD=ON \
+    -DLIBCXX_USE_POLLY=ON \
+    -DLIBCXX_USE_NEWLIB=OFF \
+    -DLIBCXX_DISABLE_ABI=OFF \
+    -DLIBCXX_BUILD_SHARED=ON \
+    -DLIBCXX_BUILD_STATIC=ON \
+    -DLIBCXX_DISABLE_WERROR=ON \
+    -DLIBCXX_ENABLE_STATIC=ON \
+    -DLIBCXX_ENABLE_SHARED=ON \
+    -DLIBCXXABI_USE_COMPILER_RT=ON \
+    -DLIBCXXABI_ENABLE_EXCEPTIONS=OFF \
+    -DLIBCXXABI_USE_LIBCXX=ON \
+    -DLIBCXXABI_ENABLE_STATIC=ON \
+    -DLIBCXXABI_ENABLE_SHARED=ON \
+    -DLIBUNWIND_ENABLE_STATIC=ON \
+    -DLIBUNWIND_ENABLE_SHARED=ON \
+    -DCOMPILER_RT_BUILD_CRT=ON \    
+    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
     -DCMAKE_POLICY_DEFAULT_CMP0146=OLD 
     
 ninja -j$(nproc)
@@ -780,17 +809,12 @@ sudo ninja install
 ls -l /opt/rocm/lib/libamd_comgr.so
 lrwxrwxrwx 1 redyy redyy 17 Feb 13 03:58 /opt/rocm/lib/libamd_comgr.so -> libamd_comgr.so.3
 ##
-# Move to source root to apply the fix
 cd /home/redyy/llvm-project/amd/libhipcxx
-# Comment out the test subdirectory in the root
 sed -i 's/^add_subdirectory(test)/# add_subdirectory(test)/' CMakeLists.txt
-# Comment out the atomic_codegen in the test root (secondary defense)
 sed -i 's/^add_subdirectory(atomic_codegen)/# add_subdirectory(atomic_codegen)/' test/CMakeLists.txt
 
 cd /home/redyy/llvm-project/amd/libhipcxx
-# Physically remove the test directory to ensure an Air Gap
 rm -rf test
-# Create a dummy empty CMakeLists.txt so the parent doesn't panic
 mkdir test
 touch test/CMakeLists.txt
 
