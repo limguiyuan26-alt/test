@@ -1170,8 +1170,167 @@ Is supported 1 / Total solutions: 1
     N,N,0,1,1024,1024,1024,1,1024,1048576,0,1024,1048576,1024,1048576,1024,1048576,f16_r,f16_r,f16_r,f16_r,f32_r,0,0,0,0,0,0,0,none,0,f16_r,f16_r,0,0,0,15230.4,41.5559,141,28.0018,76691,4.39233e-05,1e-05,0.01
 (rocm_env) redyy@redyy-NucBox-EVO-X2:/opt/rocm/bin$ 
 ##
+# Hierarchy: Prioritize sovereign standard-build tools
+export ROCM_PATH=/opt/rocm
+export LLVM_PATH=/opt/rocm/llvm
+export DEVICE_LIB_PATH=$ROCM_PATH/amdgcn/bitcode
+# --- Boundary Validation (Open Circuit) ---
+# 1. Path Existence Check
+for path in "$ROCM_PATH" "$LLVM_PATH" "$DEVICE_LIB_PATH"; do
+    if [ ! -d "$path" ]; then
+        echo -e "\e[1;31m!!! [FATAL] BOUNDARY BREACH: Path Missing: $path\e[0m"
+        echo "Truth: The hardware or compiler territory is non-existent. System Exit."
+        exit 1
+    fi
+done
+# 2. Device-Libs Integrity (The Truth Check)
+# We check for a critical anchor file for gfx1151
+ISA_ANCHOR="$DEVICE_LIB_PATH/oclc_isa_version_1151.bc"
+if [ ! -f "$ISA_ANCHOR" ]; then
+    echo -e "\e[1;31m!!! [FATAL] DEVICE-LIB CORRUPTION: Missing ISA Anchor for gfx1151\e[0m"
+    echo "Reason: Linker will fail to resolve hardware truth. Circuit Open."
+    exit 1
+fi
+# 3. File Corruption Detection (Size Check)
+# If a bitcode file exists but is 0 bytes, it is a Ghost Logic remnant.
+for bc_file in "$DEVICE_LIB_PATH"/*.bc; do
+    if [ ! -s "$bc_file" ]; then
+        echo -e "\e[1;31m!!! [FATAL] FILE CORRUPTION: $bc_file is empty/corrupt.\e[0m"
+        echo "Action: Immediate Halt to prevent Hardware Attrition."
+        exit 1
+    fi
+done
+# --- Establish Sovereignty ---
+export PATH=$LLVM_PATH/bin:$ROCM_PATH/bin:$PATH
+export LD_LIBRARY_PATH=$LLVM_PATH/lib:$ROCM_PATH/lib:$LD_LIBRARY_PATH
+# Explicitly tell Clang where the device-libs live to avoid 'Ghost Paths'
+export DEVICE_LIB_DIR=$DEVICE_LIB_PATH
+echo -e "\e[1;32m>>> Environment Purified. Target: gfx1151 Ready.\e[0m"
+# --- COMGR INTEGRITY TRAP ---
+COMGR_SO="/opt/rocm/lib/libamd_comgr.so"
+# 1. Existence Verification
+if [ ! -f "$COMGR_SO" ]; then
+    echo -e "\e[1;31m!!! [FATAL] COMGR MISSING: $COMGR_SO\e[0m"
+    exit 1
+fi
+# 2. Contamination Check (Shared Library Friction)
+# If comgr is linked to /usr/lib/llvm, it is contaminated.
+CONTAMINATION=$(ldd "$COMGR_SO" | grep "libLLVM" | grep "/usr/lib")
+if [ ! -z "$CONTAMINATION" ]; then
+    echo -e "\e[1;31m!!! [FATAL] COMGR CONTAMINATED: Linked to system LLVM.\e[0m"
+    echo "Truth: External logic has infected the sovereign binary."
+    exit 1
+fi
+# 3. Static Logic Verification
+# It must NOT show a dependency on libLLVM.so if it "swallowed" it whole.
+if ldd "$COMGR_SO" | grep -q "libLLVM"; then
+    echo -e "\e[1;33m>>> [WARNING] COMGR is using Shared LLVM. Ensure this is intentional.\e[0m"
+else
+    # Verify the internal symbols actually exist (The 'Swallow' Proof)
+    if ! nm -D "$COMGR_SO" | grep -q "amd_comgr_do_action"; then
+        echo -e "\e[1;31m!!! [FATAL] COMGR BRAIN DEAD: Required symbols missing.\e[0m"
+        exit 1
+    fi
+fi
+# 4. Sequential Causality: Runtime Alignment
+if ! ldd "$COMGR_SO" | grep -q "/opt/rocm/llvm/lib/libunwind.so"; then
+    echo -e "\e[1;31m!!! [FATAL] COMGR LINKAGE ERROR: Not using sovereign libunwind.\e[0m"
+    exit 1
+fi
+echo -e "\e[1;32m>>> COMGR Verified: Absolute Sovereignty maintained.\e[0m"
+export HIP_PLATFORM=amd
+export HIP_COMPILER=clang
+export DEVICE_LIB_PATH=/opt/rocm/amdgcn/bitcode
+# --- LIBHIPCXX INTEGRITY CHECK ---
+HIPCXX_HEADER="/opt/rocm/include/libhipcxx/hip/std/variant"
+if [ ! -f "$HIPCXX_HEADER" ]; then
+    echo -e "\e[1;31m!!! [FATAL] LIBHIPCXX HEADERS MISPLACED OR MISSING\e[0m"
+    echo "Actual Path: /opt/rocm/include/libhipcxx"
+    exit 1
+fi
+# Export the include path so Clang can find the C++ GPU headers
+export CPLUS_INCLUDE_PATH=/opt/rocm/include/libhipcxx:$CPLUS_INCLUDE_PATH
 
+# --- Auto-Activation of the Python Nation ---
+# We isolate the Python environment to prevent infection of the host shell.
+if [ -d "$HOME/rocm_env" ]; then
+    # Open Circuit: Verify activation script exists before execution
+    if [ ! -f "$HOME/rocm_env/bin/activate" ]; then
+        echo -e "\e[1;31m!!! [FATAL] PYTHON NATION CORRUPTED: Activation script missing.\e[0m"
+        exit 1
+    fi
 
+    # Sequential Causality: Source the environment
+    source "$HOME/rocm_env/bin/activate"
+
+    # Absolute Sovereignty: Verify Hardware Access within the Nation
+    # Check for KFD (Compute) and DRI (Render) nodes
+    if [ -c /dev/kfd ] && [ -c /dev/dri/renderD128 ]; then
+        GPU_STATUS="HEALTHY"
+        # Ensure Python can actually see the ROCm libraries we just verified
+        export PYTHONPATH="$HOME/rocm_env/lib/python3.12/site-packages:$PYTHONPATH"
+    else
+        GPU_STATUS="DISCONNECTED/CRIPPLED"
+        echo -e "\e[1;31m!!! [WARNING] HARDWARE AIR-GAP BREACH: GPU nodes missing.\e[0m"
+    fi
+
+    # Verify the Translator (Hipify)
+    HIPIFY_BIN=$(command -v hipify-perl 2>/dev/null)
+    
+    echo -e "\e[1;32m>>> [8060S] Python Nation Active. Status: $GPU_STATUS\e[0m"
+    
+    if [ -n "$HIPIFY_BIN" ]; then
+        echo ">>> [HIPIFY] Translator Armed: $HIPIFY_BIN"
+    else
+        # Do not exit here; hipify is a tool, not a core requirement for execution
+        echo -e "\e[1;33m>>> [HIPIFY] Translator Missing (Non-Fatal).\e[0m"
+    fi
+else
+    echo -e "\e[1;33m>>> [PYTHON] Nation not found at $HOME/rocm_env. Skipping.\e[0m"
+fi
+
+# --- hipBLASLt MASTER INTEGRITY TRAP ---
+HIPBLASLT_SO="/opt/rocm/lib/libhipblaslt.so"
+
+# 1. Physical Boundary Check
+if [ ! -f "$HIPBLASLT_SO" ]; then
+    echo -e "\e[1;31m!!! [FATAL] hipBLASLt MISSING: $HIPBLASLT_SO\e[0m"
+    exit 1
+fi
+# 2. Refined Contamination Filter (The OS-Bridge Protocol)
+# Allows necessary hardware drivers and C++ runtime; blocks foreign math/compiler logic.
+SYSTEM_INFECTION=$(ldd "$HIPBLASLT_SO" | grep -E "/usr/lib|/lib/x86_64-linux-gnu" | \
+    grep -vE "libc.so|libm.so|librt.so|libdl.so|libpthread.so|libgcc_s.so|libstdc\+\+\.so|libdrm.*\.so|libnuma\.so|libz\.so|libzstd\.so|libelf\.so")
+
+if [ ! -z "$SYSTEM_INFECTION" ]; then
+    echo -e "\e[1;31m!!! [FATAL] hipBLASLt CONTAMINATED: Foreign Logic Detected.\e[0m"
+    echo "Infection List: $SYSTEM_INFECTION"
+    exit 1
+fi
+# 3. Hardware Truth Verification (gfx1151 ISA Check)
+# Probes the binary to ensure the 8060S kernels are physically present.
+if ! strings "$HIPBLASLT_SO" | grep -q "gfx1151"; then
+    echo -e "\e[1;31m!!! [FATAL] hipBLASLt HARDWARE MISMATCH: gfx1151 kernels not found.\e[0m"
+    echo "Reason: The binary is blind to your hardware. Circuit Open."
+    exit 1
+fi
+# 4. Functional Sovereignty (Symbol Check)
+# Ensures the 'Brain' of the library isn't hollow.
+REQUIRED_SYMBOLS=("hipblasLtCreate" "hipblasLtMatmul" "hipblasLtMatrixLayoutCreate")
+for sym in "${REQUIRED_SYMBOLS[@]}"; do
+    if ! nm -D "$HIPBLASLT_SO" | grep -q "$sym"; then
+        echo -e "\e[1;31m!!! [FATAL] hipBLASLt SYMBOL CORRUPTION: $sym missing.\e[0m"
+        exit 1
+    fi
+done
+# 5. Header Alignment
+export HIPBLASLT_INCLUDE_PATH=$ROCM_PATH/include
+if [ ! -d "$HIPBLASLT_INCLUDE_PATH/hipblaslt" ]; then
+    echo -e "\e[1;31m!!! [FATAL] hipBLASLt HEADERS MISSING: $HIPBLASLT_INCLUDE_PATH/hipblaslt\e[0m"
+    exit 1
+fi
+echo -e "\e[1;32m>>> hipBLASLt Verified: gfx1151 Math Engine Sovereign.\e[0m"
+##
 
 
 
